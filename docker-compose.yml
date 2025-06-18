@@ -1,5 +1,8 @@
 services:
   onlyoffice-documentserver:
+    networks:
+      default:
+      artcoded:
     build:
       context: .
     image: onlyoffice/documentserver #[-de,-ee]
@@ -15,13 +18,10 @@ services:
       - DB_USER=onlyoffice
       - AMQP_URI=amqp://guest:guest@onlyoffice-rabbitmq
       # Uncomment strings below to enable the JSON Web Token validation.
-      #- JWT_ENABLED=true
-      #- JWT_SECRET=secret
-      #- JWT_HEADER=Authorization
-      #- JWT_IN_BODY=true
-    ports:
-      - '80:80'
-      - '443:443'
+      - JWT_ENABLED=true
+      - JWT_SECRET=QlfCe9hMhkD7K6NWKfHScWXMGX7n4Hf07TCKRLNo8n+zvrJaXzRQUuTel6yGnfij
+      - JWT_HEADER=Authorization
+      - JWT_IN_BODY=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/info/info.json"]
       interval: 30s
@@ -32,16 +32,18 @@ services:
     restart: always
     stop_grace_period: 60s
     volumes:
-       - /var/www/onlyoffice/Data
-       - /var/log/onlyoffice
-       - /var/lib/onlyoffice/documentserver/App_Data/cache/files
-       - /var/www/onlyoffice/documentserver-example/public/files
-       - /usr/share/fonts
+       - ./data/onlyoffice/data:/var/www/onlyoffice/Data
+       - ./data/onlyoffice/logs:/var/log/onlyoffice
+       - ./data/onlyoffice/cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+       - ./data/onlyoffice/examples:/var/www/onlyoffice/documentserver-example/public/files
+       - /./data/onlyoffice/fonts:/usr/share/fonts
        
   onlyoffice-rabbitmq:
     container_name: onlyoffice-rabbitmq
     image: rabbitmq:3
     restart: always
+    networks:
+      default:
     expose:
       - '5672'
     healthcheck:
@@ -54,6 +56,8 @@ services:
   onlyoffice-postgresql:
     container_name: onlyoffice-postgresql
     image: postgres:15
+    networks:
+      default:
     environment:
       - POSTGRES_DB=onlyoffice
       - POSTGRES_USER=onlyoffice
@@ -62,13 +66,15 @@ services:
     expose:
       - '5432'
     volumes:
-      - postgresql_data:/var/lib/postgresql
+      - ./data/postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U onlyoffice"]
       interval: 10s
       retries: 3
       start_period: 10s
       timeout: 10s
+networks:
+  artcoded:
+    name: custom_network
+    external: true
 
-volumes:
-  postgresql_data:
